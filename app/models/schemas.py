@@ -61,15 +61,43 @@ class Attraction(BaseModel):
     """景点信息"""
     name: str = Field(..., description="景点名称")
     address: str = Field(..., description="地址")
-    location: Location = Field(..., description="经纬度坐标")
-    visit_duration: int = Field(..., description="建议游览时间(分钟)")
+    location: Optional[Location] = Field(default=None, description="经纬度坐标")
+    visit_duration: Union[int, str] = Field(..., description="建议游览时间(分钟)")
     description: str = Field(..., description="景点描述")
     category: Optional[str] = Field(default="景点", description="景点类别")
     rating: Optional[float] = Field(default=None, description="评分")
     photos: Optional[List[str]] = Field(default_factory=list, description="景点图片URL列表")
     poi_id: Optional[str] = Field(default="", description="POI ID")
     image_url: Optional[str] = Field(default=None, description="图片URL")
-    ticket_price: int = Field(default=0, description="门票价格(元)")
+    ticket_price: Union[int, str] = Field(default=0, description="门票价格(元)")
+
+    @field_validator('visit_duration', mode='before')
+    @classmethod
+    def parse_visit_duration(cls, v):
+        if isinstance(v, str):
+            import re
+            # 提取数字
+            match = re.search(r'\d+', v)
+            if match:
+                val = int(match.group())
+                if "小时" in v or "h" in v.lower():
+                    return val * 60
+                return val
+            return 0
+        return v
+
+    @field_validator('ticket_price', mode='before')
+    @classmethod
+    def parse_ticket_price(cls, v):
+        if isinstance(v, str):
+            if "免费" in v:
+                return 0
+            import re
+            match = re.search(r'\d+', v)
+            if match:
+                return int(match.group())
+            return 0
+        return v
 
 
 class Meal(BaseModel):
@@ -79,7 +107,18 @@ class Meal(BaseModel):
     address: Optional[str] = Field(default=None, description="地址")
     location: Optional[Location] = Field(default=None, description="经纬度坐标")
     description: Optional[str] = Field(default=None, description="描述")
-    estimated_cost: int = Field(default=0, description="预估费用(元)")
+    estimated_cost: Union[int, str] = Field(default=0, description="预估费用(元)")
+
+    @field_validator('estimated_cost', mode='before')
+    @classmethod
+    def parse_cost(cls, v):
+        if isinstance(v, str):
+            import re
+            match = re.search(r'\d+', v)
+            if match:
+                return int(match.group())
+            return 0
+        return v
 
 
 class Hotel(BaseModel):
@@ -91,7 +130,18 @@ class Hotel(BaseModel):
     rating: str = Field(default="", description="评分")
     distance: str = Field(default="", description="距离景点距离")
     type: str = Field(default="", description="酒店类型")
-    estimated_cost: int = Field(default=0, description="预估费用(元/晚)")
+    estimated_cost: Union[int, str] = Field(default=0, description="预估费用(元/晚)")
+
+    @field_validator('estimated_cost', mode='before')
+    @classmethod
+    def parse_cost(cls, v):
+        if isinstance(v, str):
+            import re
+            match = re.search(r'\d+', v)
+            if match:
+                return int(match.group())
+            return 0
+        return v
 
 
 class DayPlan(BaseModel):
@@ -203,4 +253,3 @@ class ErrorResponse(BaseModel):
     success: bool = Field(default=False, description="是否成功")
     message: str = Field(..., description="错误消息")
     error_code: Optional[str] = Field(default=None, description="错误代码")
-

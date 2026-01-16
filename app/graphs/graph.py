@@ -44,6 +44,10 @@ except:
 import asyncio
 
 async def main():
+    # 确保加载环境变量
+    from app.config import load_env
+    load_env()
+    
     # 测试
     from langchain_core.messages import HumanMessage
     input_message = HumanMessage(content="我想在湖南找一个天气好的景点和酒店")
